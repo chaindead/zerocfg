@@ -3,7 +3,8 @@ package zfg
 import (
 	"fmt"
 	"strings"
-	"zfg/flag"
+
+	"github.com/chaindead/zerocfg/flag"
 )
 
 type config struct {
