@@ -2,10 +2,9 @@ package zfg
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"zfg/flag"
-
-	"github.com/goccy/go-yaml"
 )
 
 type config struct {
@@ -58,33 +57,14 @@ func (f *config) set(key string, v string) error {
 }
 
 func Configuration() string {
-	// Create a map that will be marshaled directly to YAML
-	config := make(map[string]interface{})
+	b := strings.Builder{}
 
-	// Convert configuration values to a nested map structure
+	b.WriteString("config:\n")
+
 	for k, v := range c.vs {
-		parts := strings.Split(k, ".")
-		current := config
-
-		// Navigate through the parts to create nested maps
-		for i := 0; i < len(parts)-1; i++ {
-			part := parts[i]
-			if _, exists := current[part]; !exists {
-				current[part] = make(map[string]interface{})
-			}
-			current = current[part].(map[string]interface{})
-		}
-
-		// Set the final value
-		lastPart := parts[len(parts)-1]
-		current[lastPart] = v.Value.String()
+		line := fmt.Sprintf("  -%s = %s [%s]\n", k, v.Value, v.Description)
+		b.WriteString(line)
 	}
 
-	// Marshal the entire structure to YAML
-	out, err := yaml.Marshal(config)
-	if err != nil {
-		panic(err)
-	}
-
-	return string(out)
+	return b.String()
 }

@@ -26,6 +26,10 @@ func (p Parser) Parse() (map[string]string, error) {
 		return nil, fmt.Errorf("read yaml file: %w", err)
 	}
 
+	return parse(data)
+}
+
+func parse(data []byte) (map[string]string, error) {
 	var settings map[string]any
 	if err := yaml.Unmarshal(data, &settings); err != nil {
 		return nil, fmt.Errorf("unmarshal yaml: %w", err)
