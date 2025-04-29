@@ -13,14 +13,24 @@ func Parse(ps ...Parser) error {
 	for _, p := range c.parsers {
 		vs, err := p.Parse()
 		if err != nil {
-			return fmt.Errorf("parse %q: %v", p.Type(), err)
+			return fmt.Errorf("parse %q: %w", p.Type(), err)
 		}
 
-		for k, v := range vs {
-			err = c.set(k, v)
-			if err != nil {
-				return fmt.Errorf("set key=%q by source=%q: %v", k, p.Type(), err)
-			}
+		err = c.applyParser(vs)
+		if err != nil {
+			return fmt.Errorf("apply %q: %w", p.Type(), err)
+		}
+
+	}
+
+	return nil
+}
+
+func (c *config) applyParser(vs map[string]string) error {
+	for k, v := range vs {
+		err := c.set(k, v)
+		if err != nil {
+			return fmt.Errorf("set key=%q: %w", k, err)
 		}
 	}
 

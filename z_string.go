@@ -20,6 +20,6 @@ func (s *stringValue) String() string {
 	return string(*s)
 }
 
-func String(name string, value string, usage string, opts ...OptNode) *string {
+func Str(name string, value string, usage string, opts ...OptNode) *string {
 	return Any(name, value, usage, newStringValue, opts...)
 }

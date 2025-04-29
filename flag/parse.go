@@ -16,8 +16,13 @@ func (Parser) Type() string {
 }
 
 func (Parser) Parse() (map[string]string, error) {
-	flags := make(map[string]string)
 	args := os.Args[1:]
+
+	return parse(args)
+}
+
+func parse(args []string) (map[string]string, error) {
+	flags := make(map[string]string)
 
 	for i := 0; i < len(args); i++ {
 		arg := args[i]

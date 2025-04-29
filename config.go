@@ -1,7 +1,6 @@
 package zfg
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"zfg/flag"
@@ -14,13 +13,17 @@ type config struct {
 	parsers []Parser
 }
 
-var c = &config{
-	make(map[string]*Node),
-	make(map[string]string),
-	[]Parser{flag.New()},
+func defaultConfig() *config {
+	return &config{
+		make(map[string]*Node),
+		make(map[string]string),
+		[]Parser{flag.New()},
+	}
 }
 
-func (f *config) add(key string, v Value, usage string, opts ...OptNode) {
+var c = defaultConfig()
+
+func (c *config) add(key string, v Value, usage string, opts ...OptNode) {
 	n := &Node{
 		Name:        key,
 		Description: usage,
@@ -31,21 +34,31 @@ func (f *config) add(key string, v Value, usage string, opts ...OptNode) {
 		opt(n)
 	}
 
-	f.vs[key] = n
+	if c.vs[n.Name] != nil {
+		err := fmt.Errorf("key=%q: %w", n.Name, ErrDuplicateKey)
+		panic(err)
+	}
+
+	c.vs[n.Name] = n
 	for _, alias := range n.Aliases {
-		f.aliases[alias] = key
+		if c.vs[alias] != nil {
+			err := fmt.Errorf("key=%q: %w", alias, ErrCollidingAlias)
+			panic(err)
+		}
+
+		c.aliases[alias] = n.Name
 	}
 }
 
-func (f *config) set(key string, v string) error {
-	trueKey, ok := f.aliases[key]
+func (c *config) set(key string, v string) error {
+	trueKey, ok := c.aliases[key]
 	if ok {
 		key = trueKey
 	}
 
-	n, ok := f.vs[key]
+	n, ok := c.vs[key]
 	if !ok {
-		return errors.New("no such key")
+		return ErrNoSuchKey
 	}
 
 	if n.fromSource {
@@ -53,7 +66,7 @@ func (f *config) set(key string, v string) error {
 	}
 
 	n.fromSource = true
-	return f.vs[key].Value.Set(v)
+	return c.vs[key].Value.Set(v)
 }
 
 func Configuration() string {
@@ -62,7 +75,13 @@ func Configuration() string {
 	b.WriteString("config:\n")
 
 	for k, v := range c.vs {
-		line := fmt.Sprintf("  -%s = %s [%s]\n", k, v.Value, v.Description)
+
+		val := v.Value.String()
+		if v.isSecret {
+			val = "<secret>"
+		}
+
+		line := fmt.Sprintf("  -%s = %s [%s]\n", k, val, v.Description)
 		b.WriteString(line)
 	}
 
