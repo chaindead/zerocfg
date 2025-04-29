@@ -1,0 +1,8 @@
+# https://taskfile.dev
+
+version: '3'
+
+dotenv: ["."]
+
+tasks:
+  run: go run ./test/...
