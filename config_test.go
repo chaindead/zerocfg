@@ -15,7 +15,7 @@ func val[T any](v T, create func(T, *T) Value) Value {
 	return create(v, p)
 }
 
-func Test_ConfigrationOk(t *testing.T) {
+func Test_ConfigOk(t *testing.T) {
 	const (
 		name   = "name_key"
 		alias  = "alias_key"
@@ -202,12 +202,10 @@ func Test_ConfigrationOk(t *testing.T) {
 	}
 }
 
-func Test_ConfigrationError(t *testing.T) {
+func Test_ConfigError(t *testing.T) {
 	const (
-		name  = "name_key"
-		alias = "alias_key"
-		desc  = "description"
-
+		name    = "name_key"
+		desc    = "description"
 		unknown = "wrong_name"
 	)
 
