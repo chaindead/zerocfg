@@ -2,6 +2,7 @@ package zerocfg
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 )
 
@@ -41,12 +42,22 @@ func newDurationSlice(val []time.Duration, p *[]time.Duration) Value {
 }
 
 func (s *durationSliceValue) Set(val string) error {
-	var durations []time.Duration
-	if err := json.Unmarshal([]byte(val), &durations); err != nil {
+	var strRepr []string
+	if err := json.Unmarshal([]byte(val), &strRepr); err != nil {
 		return err
 	}
 
-	*s = durations
+	ds := make([]time.Duration, 0, len(strRepr))
+	for _, str := range strRepr {
+		d, err := time.ParseDuration(str)
+		if err != nil {
+			return fmt.Errorf("duration %q is not a valid duration", str)
+		}
+
+		ds = append(ds, d)
+	}
+
+	*s = ds
 	return nil
 }
 
