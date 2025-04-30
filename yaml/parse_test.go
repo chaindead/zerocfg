@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
-	zfg "github.com/chaindead/zerocfg"
-	"github.com/chaindead/zerocfg/yaml"
+	zfg "github.com/chaindead/zeroconf"
+	"github.com/chaindead/zeroconf/yaml"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

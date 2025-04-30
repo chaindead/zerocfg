@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/chaindead/zerocfg/flag"
+	"github.com/chaindead/zeroconf/flag"
 )
 
 type config struct {

@@ -65,6 +65,6 @@ func (s *durationSliceValue) String() string {
 	return string(data)
 }
 
-func Durs(name string, value []time.Duration, usage string, opts ...OptNode) *[]time.Duration {
-	return Any(name, value, usage, newDurationSlice, opts...)
+func Durs(name string, defValue []time.Duration, desc string, opts ...OptNode) *[]time.Duration {
+	return Any(name, defValue, desc, newDurationSlice, opts...)
 }

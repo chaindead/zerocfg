@@ -1,4 +1,4 @@
-module github.com/chaindead/zerocfg
+module github.com/chaindead/zeroconf
 
 go 1.24
 
