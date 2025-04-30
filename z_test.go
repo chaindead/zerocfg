@@ -2,8 +2,10 @@ package zfg
 
 import (
 	"fmt"
+	"net"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -39,6 +41,54 @@ func Test_ValueOk(t *testing.T) {
 			},
 		},
 		{
+			name: "uint",
+			init: func() (func() any, any, map[string]string) {
+				return regSource(Uint, uint(42))
+			},
+		},
+		{
+			name: "int32",
+			init: func() (func() any, any, map[string]string) {
+				return regSource(Int32, int32(123))
+			},
+		},
+		{
+			name: "uint32",
+			init: func() (func() any, any, map[string]string) {
+				return regSource(Uint32, uint32(456))
+			},
+		},
+		{
+			name: "int64",
+			init: func() (func() any, any, map[string]string) {
+				return regSource(Int64, int64(789))
+			},
+		},
+		{
+			name: "uint64",
+			init: func() (func() any, any, map[string]string) {
+				return regSource(Uint64, uint64(1011))
+			},
+		},
+		{
+			name: "true bool",
+			init: func() (func() any, any, map[string]string) {
+				return regSource(Bool, true)
+			},
+		},
+		{
+			name: "false bool",
+			init: func() (func() any, any, map[string]string) {
+				return regSource(Bool, false)
+			},
+		},
+		{
+			name: "bools",
+			init: func() (func() any, any, map[string]string) {
+				return regSource(Bools, []bool{true, false, true})
+			},
+		},
+		{
 			name: "ints",
 			init: func() (func() any, any, map[string]string) {
 				return regSource(Ints, []int{1, 2, 3})
@@ -53,7 +103,49 @@ func Test_ValueOk(t *testing.T) {
 		{
 			name: "strs",
 			init: func() (func() any, any, map[string]string) {
-				return regSource(Strings, []string{"a", "b", "c"})
+				return regSource(Strs, []string{"a", "b", "c"})
+			},
+		},
+		{
+			name: "float32",
+			init: func() (func() any, any, map[string]string) {
+				return regSource(Float32, float32(3.14))
+			},
+		},
+		{
+			name: "float32s",
+			init: func() (func() any, any, map[string]string) {
+				return regSource(Float32s, []float32{1.1, 2.2, 3.3})
+			},
+		},
+		{
+			name: "float64",
+			init: func() (func() any, any, map[string]string) {
+				return regSource(Float64, 3.14159265359)
+			},
+		},
+		{
+			name: "float64s",
+			init: func() (func() any, any, map[string]string) {
+				return regSource(Float64s, []float64{1.1, 2.2, 3.3})
+			},
+		},
+		{
+			name: "duration",
+			init: func() (func() any, any, map[string]string) {
+				return regSource(Dur, 5*time.Second)
+			},
+		},
+		{
+			name: "durations",
+			init: func() (func() any, any, map[string]string) {
+				return regSource(Durs, []time.Duration{time.Second, 2 * time.Minute, 3 * time.Hour})
+			},
+		},
+		{
+			name: "ip",
+			init: func() (func() any, any, map[string]string) {
+				return regSource(ipInternal, net.ParseIP("192.168.1.1"))
 			},
 		},
 		{

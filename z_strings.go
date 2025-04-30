@@ -25,6 +25,6 @@ func (s *stringSliceValue) String() string {
 	return string(data)
 }
 
-func Strings(name string, defVal []string, desc string, opts ...OptNode) *[]string {
+func Strs(name string, defVal []string, desc string, opts ...OptNode) *[]string {
 	return Any(name, defVal, desc, newStringSlice, opts...)
 }

@@ -7,12 +7,17 @@ import (
 )
 
 func ToString(v any) string {
+	if s, ok := v.(fmt.Stringer); ok {
+		return s.String()
+	}
+
 	t := reflect.TypeOf(v)
-	if t.Kind() == reflect.Array || t.Kind() == reflect.Slice || t.Kind() == reflect.Map {
+	switch t.Kind() {
+	case reflect.Array, reflect.Slice, reflect.Map:
 		data, _ := json.Marshal(v)
 
 		return string(data)
+	default:
+		return fmt.Sprint(v)
 	}
-
-	return fmt.Sprint(v)
 }
