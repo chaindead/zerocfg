@@ -1,0 +1,33 @@
+name: Go CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Set up Go 1.18
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.18"
+
+      - name: Install gotestsum
+        run: go install gotest.tools/gotestsum@latest
+
+      - name: Run tests with coverage
+        # -coverprofile generates coverage.out in the repo root
+        run: gotestsum --format short-verbose -- \
+          -covermode=atomic -coverprofile=coverage.out ./...
+
+      - name: Upload coverage report to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: coverage.out
