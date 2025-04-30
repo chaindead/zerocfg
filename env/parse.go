@@ -2,14 +2,11 @@ package env
 
 import (
 	"os"
+	"regexp"
 	"strings"
 )
 
-var r = strings.NewReplacer(".", "_", // separator
-	// remove
-	"-", "",
-	"_", "",
-)
+var cleanRe = regexp.MustCompile(`[^A-Za-z0-9.]+`)
 
 type Parser struct{}
 
@@ -40,8 +37,15 @@ func (p Parser) Parse(awaited map[string]bool, _ func(any) string) (found, unkno
 	return found, unknown, nil
 }
 
-func toENV(key string) string {
-	key = strings.ToUpper(key)
+// toENV transforms the input string into an uppercase, underscore-separated
+// environment variable name by:
+// 1. Removing all characters except letters, digits, and dots.
+// 2. Converting to uppercase.
+// 3. Replacing dots with underscores.
+func toENV(s string) string {
+	cleaned := cleanRe.ReplaceAllString(s, "")
+	upper := strings.ToUpper(cleaned)
+	envName := strings.ReplaceAll(upper, ".", "_")
 
-	return r.Replace(key)
+	return envName
 }

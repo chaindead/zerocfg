@@ -79,11 +79,11 @@ Keys for env source doest match directly, for example:
 username = zfg.Str("db.user", "guest", "user of database")
 ```
 
-will be parsed from env `DB_USER`, conversion is made 
- - replacing `.->_` 
- - deleting all specials like `-_`
- - string to upper
+will be parsed from env `DB_USER`, transforming key string into an uppercase, underscore-separated environment variable name by:
+1. Removing all characters except letters, digits, and dots.
+2. Converting to uppercase.
+3. Replacing dots with underscores.
 
-examples:
+Examples:
 * `db.user` -> `DB_USER`
 * `camelCase.da-sh.under_wear` -> `CAMELCASE_DASH_UNDERWEAR`
