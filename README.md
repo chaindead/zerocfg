@@ -1,4 +1,4 @@
-Zero Effort Configuration
+# Zero Effort Configuration
 
 [![godoc](http://img.shields.io/badge/godoc-reference-blue.svg?style=flat)](https://godoc.org/github.com/chaindead/zerocfg) [![license](http://img.shields.io/badge/license-MIT-red.svg?style=flat)](https://raw.githubusercontent.com/chaindead/zerocfg/main/LICENSE)
 
