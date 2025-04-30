@@ -1,4 +1,4 @@
-package zfg
+package zerocfg
 
 type Node struct {
 	Name        string

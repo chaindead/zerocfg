@@ -1,4 +1,4 @@
-package zfg
+package zerocfg
 
 type Grp struct {
 	prefix string

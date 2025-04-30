@@ -1,4 +1,4 @@
-package zfg
+package zerocfg
 
 import (
 	"net"

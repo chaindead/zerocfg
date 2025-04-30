@@ -1,4 +1,4 @@
-package zfg
+package zerocfg
 
 func Any[T any](name string, defVal T, desc string, create func(T, *T) Value, opts ...OptNode) *T {
 	p := new(T)

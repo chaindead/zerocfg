@@ -1,10 +1,10 @@
-package zfg
+package zerocfg
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/chaindead/zeroconf/flag"
+	"github.com/chaindead/zerocfg/flag"
 )
 
 type config struct {
