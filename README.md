@@ -1,8 +1,9 @@
 # Zero Effort Configuration
 
 [![GoDoc](http://img.shields.io/badge/godoc-reference-blue.svg?style=flat)](https://godoc.org/github.com/chaindead/zerocfg)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Go Report Card](https://goreportcard.com/badge/github.com/chaindead/zerocfg)](https://goreportcard.com/report/github.com/chaindead/zerocfg)
 [![Codecov](https://codecov.io/gh/chaindead/zerocfg/branch/main/graph/badge.svg)](https://codecov.io/gh/chaindead/zerocfg)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![visitors](https://api.visitorbadge.io/api/visitors?path=github.com%2Fchaindead%2Fzerocfg&label=Visitors&countColor=%23263759&style=plastic&labelStyle=none)](https://visitorbadge.io/status?path=github.com%2Fchaindead%2Fzerocfg)
 
 `zerocfg` is a Go package that provides fast and simple configuration management with support for multiple sources. It's designed to minimize configuration boilerplate while maintaining flexibility and ease of use.
