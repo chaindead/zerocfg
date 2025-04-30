@@ -1,6 +1,6 @@
 module github.com/chaindead/zerocfg
 
-go 1.24
+go 1.18
 
 require (
 	github.com/stretchr/testify v1.10.0
