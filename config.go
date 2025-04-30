@@ -1,7 +1,9 @@
 package zerocfg
 
 import (
+	"bytes"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/chaindead/zerocfg/flag"
@@ -86,17 +88,51 @@ func (c *config) awaited() map[string]bool {
 
 func Configuration() string {
 	b := strings.Builder{}
-
 	b.WriteString("config:\n")
 
-	for k, v := range c.vs {
+	vs := make([]*Node, 0, len(c.vs))
+	for _, n := range c.vs {
+		vs = append(vs, n)
+	}
+
+	sort.Slice(vs, func(i, j int) bool {
+		return vs[i].Name < vs[j].Name
+	})
+
+	return render(vs)
+}
+
+func render(vs []*Node) string {
+	var maxName, maxVal int
+	for _, v := range vs {
+		if l := len(v.Name); l > maxName {
+			maxName = l
+		}
 
 		val := v.Value.String()
 		if v.isSecret {
 			val = "<secret>"
 		}
 
-		line := fmt.Sprintf("  -%s = %s [%s]\n", k, val, v.Description)
+		if l := len(val); l > maxVal {
+			maxVal = l
+		}
+	}
+
+	var b bytes.Buffer
+	for _, v := range vs {
+		val := v.Value.String()
+		if v.isSecret {
+			val = "<secret>"
+		}
+
+		line := fmt.Sprintf(
+			" %-*s = %-*s (%s)\n",
+			maxName, v.Name,
+			maxVal, val,
+			v.Description,
+		)
+
 		b.WriteString(line)
 	}
 

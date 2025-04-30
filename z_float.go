@@ -53,7 +53,7 @@ func (s *float64SliceValue) String() string {
 	return string(data)
 }
 
-func Float64s(name string, value []float64, usage string, opts ...OptNode) *[]float64 {
+func Floats64(name string, value []float64, usage string, opts ...OptNode) *[]float64 {
 	return Any(name, value, usage, newFloat64Slice, opts...)
 }
 
@@ -105,6 +105,6 @@ func (s *float32SliceValue) String() string {
 	return string(data)
 }
 
-func Float32s(name string, value []float32, usage string, opts ...OptNode) *[]float32 {
+func Floats32(name string, value []float32, usage string, opts ...OptNode) *[]float32 {
 	return Any(name, value, usage, newFloat32Slice, opts...)
 }

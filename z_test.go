@@ -115,7 +115,7 @@ func Test_ValueOk(t *testing.T) {
 		{
 			name: "float32s",
 			init: func() (func() any, any, map[string]string) {
-				return regSource(Float32s, []float32{1.1, 2.2, 3.3})
+				return regSource(Floats32, []float32{1.1, 2.2, 3.3})
 			},
 		},
 		{
@@ -127,7 +127,7 @@ func Test_ValueOk(t *testing.T) {
 		{
 			name: "float64s",
 			init: func() (func() any, any, map[string]string) {
-				return regSource(Float64s, []float64{1.1, 2.2, 3.3})
+				return regSource(Floats64, []float64{1.1, 2.2, 3.3})
 			},
 		},
 		{
