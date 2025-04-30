@@ -53,8 +53,17 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("Database connection: %s:%d\n", *ip, *port)
-	fmt.Printf("Credentials: %s:*****\n", *username)
+	fmt.Printf("Connect to %s:%d creds=%s:%s\n", *ip, *port, *username, *password)
+	// OUTPUT: Connect to 127.0.0.1:5678 creds=guest:qwerty
+
+	fmt.Println(zfg.Configuration())
+	// CMD: go run ./... -c test.yaml
+	// OUTPUT:
+	//  config.path = test.yaml      (path to yaml conf file)
+	//  db.ip       = 127.0.0.1      (database location)
+	//  db.password = <secret>       (password for user)
+	//  db.port     = 5678           (database port)
+	//  db.user     = guest          (user of database)
 }
 ```
 
