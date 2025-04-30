@@ -21,6 +21,6 @@ func (i *intValue) Type() string {
 
 func (i *intValue) String() string { return strconv.Itoa(int(*i)) }
 
-func Int(name string, value int, usage string, opts ...OptNode) *int {
-	return Any(name, value, usage, newIntValue, opts...)
+func Int(name string, defVal int, desc string, opts ...OptNode) *int {
+	return Any(name, defVal, desc, newIntValue, opts...)
 }

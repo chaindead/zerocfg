@@ -1,9 +1,9 @@
 package zfg
 
-func Any[T any](name string, value T, usage string, create func(T, *T) Value, opts ...OptNode) *T {
+func Any[T any](name string, defVal T, desc string, create func(T, *T) Value, opts ...OptNode) *T {
 	p := new(T)
-	*p = value
-	c.add(name, create(value, p), usage, opts...)
+	*p = defVal
+	c.add(name, create(defVal, p), desc, opts...)
 
 	return p
 }

@@ -12,6 +12,10 @@ func newMapValue(val map[string]any, p *map[string]any) Value {
 }
 
 func (m *mapValue) Set(val string) error {
+	for k, _ := range *m {
+		delete(*m, k)
+	}
+
 	return json.Unmarshal([]byte(val), m)
 }
 
@@ -28,6 +32,12 @@ func (m *mapValue) String() string {
 	return string(data)
 }
 
-func Map(name string, value map[string]any, usage string, opts ...OptNode) *map[string]any {
+func mapInternal(name string, value map[string]any, usage string, opts ...OptNode) *map[string]any {
 	return Any(name, value, usage, newMapValue, opts...)
+}
+
+func Map(name string, defVal map[string]any, desc string, opts ...OptNode) map[string]any {
+	mptr := Any(name, defVal, desc, newMapValue, opts...)
+
+	return *mptr
 }

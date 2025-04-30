@@ -2,8 +2,6 @@ package zfg
 
 import (
 	"encoding/json"
-	"strconv"
-	"strings"
 )
 
 type intSliceValue []int
@@ -22,18 +20,11 @@ func (s *intSliceValue) Type() string {
 }
 
 func (s *intSliceValue) String() string {
-	if s == nil || len(*s) == 0 {
-		return ""
-	}
+	data, _ := json.Marshal(*s)
 
-	parts := make([]string, len(*s))
-	for i, v := range *s {
-		parts[i] = strconv.Itoa(v)
-	}
-
-	return strings.Join(parts, ",")
+	return string(data)
 }
 
-func Ints(name string, value []int, usage string, opts ...OptNode) *[]int {
-	return Any(name, value, usage, newIntSlice, opts...)
+func Ints(name string, defVal []int, desc string, opts ...OptNode) *[]int {
+	return Any(name, defVal, desc, newIntSlice, opts...)
 }

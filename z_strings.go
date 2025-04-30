@@ -2,7 +2,6 @@ package zfg
 
 import (
 	"encoding/json"
-	"strings"
 )
 
 type stringSliceValue []string
@@ -21,13 +20,11 @@ func (s *stringSliceValue) Type() string {
 }
 
 func (s *stringSliceValue) String() string {
-	if s == nil || len(*s) == 0 {
-		return ""
-	}
+	data, _ := json.Marshal(*s)
 
-	return strings.Join(*s, ",")
+	return string(data)
 }
 
-func Strings(name string, value []string, usage string, opts ...OptNode) *[]string {
-	return Any(name, value, usage, newStringSlice, opts...)
+func Strings(name string, defVal []string, desc string, opts ...OptNode) *[]string {
+	return Any(name, defVal, desc, newStringSlice, opts...)
 }
