@@ -75,11 +75,11 @@ func (c *config) set(key string, v string) error {
 func (c *config) awaited() map[string]bool {
 	a := make(map[string]bool)
 
-	for k, _ := range c.vs {
+	for k := range c.vs {
 		a[k] = true
 	}
 
-	for k, _ := range c.aliases {
+	for k := range c.aliases {
 		a[k] = false
 	}
 

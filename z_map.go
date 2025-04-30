@@ -12,7 +12,7 @@ func newMapValue(val map[string]any, p *map[string]any) Value {
 }
 
 func (m *mapValue) Set(val string) error {
-	for k, _ := range *m {
+	for k := range *m {
 		delete(*m, k)
 	}
 
