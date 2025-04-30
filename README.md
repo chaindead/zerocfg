@@ -1,6 +1,9 @@
 # Zero Effort Configuration
 
-[![godoc](http://img.shields.io/badge/godoc-reference-blue.svg?style=flat)](https://godoc.org/github.com/chaindead/zerocfg) [![license](http://img.shields.io/badge/license-MIT-red.svg?style=flat)](https://raw.githubusercontent.com/chaindead/zerocfg/main/LICENSE) [![codecov](https://codecov.io/gh/chaindead/zerocfg/branch/main/graph/badge.svg)](https://codecov.io/gh/chaindead/zerocfg)
+[![GoDoc](http://img.shields.io/badge/godoc-reference-blue.svg?style=flat)](https://godoc.org/github.com/chaindead/zerocfg)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Codecov](https://codecov.io/gh/chaindead/zerocfg/branch/main/graph/badge.svg)](https://codecov.io/gh/chaindead/zerocfg)
+[![visitors](https://api.visitorbadge.io/api/visitors?path=github.com%2Fchaindead%2Fzerocfg&label=Visitors&countColor=%23263759&style=plastic&labelStyle=none)](https://visitorbadge.io/status?path=github.com%2Fchaindead%2Fzerocfg)
 
 `zerocfg` is a Go package that provides fast and simple configuration management with support for multiple sources. It's designed to minimize configuration boilerplate while maintaining flexibility and ease of use.
 
@@ -8,10 +11,10 @@
 
 - 🚀 Multiple configuration sources (flags, environment variables, YAML)
 - 💪 Strong type safety with compile-time checks
-- 🔒 Built-in support for secret values
 - 🎯 Priority-based value resolution
 - 🛠 Simple and intuitive API
 - 📝 Automatic documentation generation
+- 🔒 Built-in support for secret values
 
 ## Installation
 
@@ -99,20 +102,26 @@ Important notes:
 
 Environment variables are automatically transformed from the configuration key format:
 
-| Config Key | Environment Variable |
-|------------|---------------------|
-| db.user | DB_USER |
-| app.api.key | APP_API_KEY |
-| camelCase.value | CAMELCASE_VALUE |
+| Config Key | Environment Variable | Note |
+|------------|---------------------|------|
+| db.user | DB_USER | Basic transformation |
+| app.api.key | APP_API_KEY | Multi-level path |
+| camelCase.value | CAMELCASE_VALUE | CamelCase handling |
+| api-key.secret | APIKEY_SECRET | Dashes removed |
+| under_score.value | UNDERSCORE_VALUE | Underscores removed |
 
 The transformation rules:
 1. Remove special characters (except letters, digits, and dots)
-2. Convert to uppercase
-3. Replace dots with underscores
+2. Replace dots with underscores
+3. Convert to uppercase
 
 ## Documentation
 
 For detailed documentation and advanced usage examples, visit our [Godoc page](https://godoc.org/github.com/chaindead/zerocfg).
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=chaindead/zerocfg&type=Date)](https://www.star-history.com/#chaindead/zerocfg&Date)
 
 ## License
 
