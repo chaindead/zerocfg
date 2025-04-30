@@ -67,7 +67,6 @@ func (s *durationSliceValue) Type() string {
 
 func (s *durationSliceValue) String() string {
 	ds := make([]string, 0, len(*s))
-
 	for _, d := range *s {
 		ds = append(ds, d.String())
 	}
