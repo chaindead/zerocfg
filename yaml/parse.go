@@ -3,74 +3,75 @@ package yaml
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"gopkg.in/yaml.v3"
 )
 
 type Parser struct {
 	path *string
+
+	conv    func(any) string
+	awaited map[string]bool
 }
 
-func New(path *string) Parser {
-	return Parser{path: path}
+func New(path *string) *Parser {
+	return &Parser{path: path}
 }
 
-func (p Parser) Type() string {
+func (p *Parser) Type() string {
 	return "yaml"
 }
 
-func (p Parser) Parse() (map[string]string, error) {
+func (p *Parser) Parse(keys map[string]bool, conv func(any) string) (found, unknown map[string]string, err error) {
 	data, err := os.ReadFile(*p.path)
 	if err != nil {
-		return nil, fmt.Errorf("read yaml file: %w", err)
+		return nil, nil, fmt.Errorf("read yaml file: %w", err)
 	}
 
-	return parse(data)
+	p.conv = conv
+	p.awaited = keys
+
+	return p.parse(data)
 }
 
-func parse(data []byte) (map[string]string, error) {
+func (p *Parser) parse(data []byte) (found, unknown map[string]string, err error) {
 	var settings map[string]any
-	if err := yaml.Unmarshal(data, &settings); err != nil {
-		return nil, fmt.Errorf("unmarshal yaml: %w", err)
+	if err = yaml.Unmarshal(data, &settings); err != nil {
+		return nil, nil, fmt.Errorf("unmarshal yaml: %w", err)
 	}
 
-	return flatten(settings), nil
+	found, unknown = p.flatten(settings)
+
+	return found, unknown, nil
 }
 
-func flatten(settings map[string]any) map[string]string {
-	keys := make(map[string]string)
-	flattenDFS(settings, "", keys)
+func (p *Parser) flatten(settings map[string]any) (found, unknown map[string]string) {
+	found, unknown = make(map[string]string), make(map[string]string)
 
-	return keys
+	p.flattenDFS(settings, "", found, unknown)
+
+	return found, unknown
 }
 
-func flattenDFS(m map[string]any, prefix string, keys map[string]string) {
+func (p *Parser) flattenDFS(m map[string]any, prefix string, found, unknown map[string]string) {
 	for k, v := range m {
 		newKey := k
 		if prefix != "" {
 			newKey = prefix + "." + k
 		}
 
-		if subMap, ok := v.(map[string]interface{}); ok {
-			flattenDFS(subMap, newKey, keys)
+		if p.awaited[newKey] {
+			found[newKey] = p.conv(v)
 
 			continue
 		}
 
-		var value string
-		switch t := v.(type) {
-		case []any:
-			ss := make([]string, 0, len(t))
-			for _, sub := range t {
-				ss = append(ss, fmt.Sprintf("%v", sub))
-			}
+		if subMap, ok := v.(map[string]interface{}); ok {
+			p.flattenDFS(subMap, newKey, found, unknown)
 
-			value = strings.Join(ss, ",")
-		default:
-			value = fmt.Sprintf("%v", v)
+			continue
 		}
 
-		keys[newKey] = value
+		unknown[newKey] = p.conv(v)
 	}
 }

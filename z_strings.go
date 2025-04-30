@@ -1,6 +1,7 @@
 package zfg
 
 import (
+	"encoding/json"
 	"strings"
 )
 
@@ -12,8 +13,7 @@ func newStringSlice(val []string, p *[]string) Value {
 }
 
 func (s *stringSliceValue) Set(val string) error {
-	*s = strings.Split(val, ",")
-	return nil
+	return json.Unmarshal([]byte(val), s)
 }
 
 func (s *stringSliceValue) Type() string {

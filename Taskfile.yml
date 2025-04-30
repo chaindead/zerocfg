@@ -6,3 +6,4 @@ tasks:
       - sh: gotestsum --version
         msg: install with "go install gotest.tools/gotestsum@latest"
     cmd: gotestsum --format testdox
+  run: go run ./test/...

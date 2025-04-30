@@ -1,7 +1,7 @@
 package zfg
 
 import (
-	"fmt"
+	"encoding/json"
 	"strconv"
 	"strings"
 )
@@ -14,24 +14,7 @@ func newIntSlice(val []int, p *[]int) Value {
 }
 
 func (s *intSliceValue) Set(val string) error {
-	if val == "" {
-		*s = nil
-		return nil
-	}
-
-	parts := strings.Split(val, ",")
-	slice := make([]int, 0, len(parts))
-
-	for _, part := range parts {
-		num, err := strconv.ParseInt(strings.TrimSpace(part), 10, 64)
-		if err != nil {
-			return fmt.Errorf("parse int %q: %w", part, err)
-		}
-		slice = append(slice, int(num))
-	}
-
-	*s = slice
-	return nil
+	return json.Unmarshal([]byte(val), s)
 }
 
 func (s *intSliceValue) Type() string {

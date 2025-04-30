@@ -3,88 +3,64 @@ package zfg
 import (
 	"fmt"
 	"reflect"
-	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
-func conv[T, K any](s []T, fn func(T) K) []K {
-	r := make([]K, len(s))
-	for i, v := range s {
-		r[i] = fn(v)
+type anyFn[T any] func(string, T, string, ...OptNode) *T
+
+func regSource[T any](fn anyFn[T], v T) (reg func() any, value any, source map[string]string) {
+	var def T
+	reg = func() any {
+		return fn("name", def, "desc")
 	}
 
-	return r
+	source = map[string]string{"name": ToString(v)}
+
+	return reg, v, source
 }
 
 func Test_ValueOk(t *testing.T) {
-	const (
-		name = "name_key"
-		desc = "description"
-		num  = 10
-		str  = "string_value"
-	)
-
-	var (
-		strs    = []string{str, str + "1", str + "2"}
-		ints    = []int{num, num * 2, num * 3}
-		intsStr = conv(ints, strconv.Itoa)
-	)
-
 	tests := []struct {
-		name   string
-		value  func() any
-		source map[string]string
-		expect any
+		name string
+		init func() (ptr func() any, val any, src map[string]string)
 	}{
 		{
 			name: "default",
-			value: func() any {
-				return Int(name, num, desc)
+			init: func() (func() any, any, map[string]string) {
+				return regSource(Int, 0)
 			},
-			expect: num,
 		},
 		{
 			name: "int",
-			value: func() any {
-				return Int(name, 0, desc)
+			init: func() (func() any, any, map[string]string) {
+				return regSource(Int, 5)
 			},
-			source: map[string]string{
-				name: strconv.Itoa(num),
-			},
-			expect: num,
 		},
 		{
 			name: "ints",
-			value: func() any {
-				return Ints(name, nil, desc)
+			init: func() (func() any, any, map[string]string) {
+				return regSource(Ints, []int{1, 2, 3})
 			},
-			source: map[string]string{
-				name: strings.Join(intsStr, ","),
-			},
-			expect: ints,
 		},
 		{
 			name: "str",
-			value: func() any {
-				return Str(name, "", desc)
+			init: func() (func() any, any, map[string]string) {
+				return regSource(Str, "value")
 			},
-			source: map[string]string{
-				name: str,
-			},
-			expect: str,
 		},
 		{
 			name: "strs",
-			value: func() any {
-				return Strings(name, nil, desc)
+			init: func() (func() any, any, map[string]string) {
+				return regSource(Strings, []string{"a", "b", "c"})
 			},
-			source: map[string]string{
-				name: strings.Join(strs, ","),
+		},
+		{
+			name: "map",
+			init: func() (func() any, any, map[string]string) {
+				return regSource(Map, map[string]any{"float": 1., "str": "val"})
 			},
-			expect: strs,
 		},
 	}
 
@@ -99,15 +75,17 @@ func Test_ValueOk(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c = defaultConfig()
-			v := tt.value()
 
-			err := c.applyParser(tt.source)
+			reg, expected, source := tt.init()
+			ptr := reg()
+
+			err := c.applyParser(source)
 			require.NoError(t, err)
 
-			actual, err := dereference(v)
+			actual, err := dereference(ptr)
 			require.NoError(t, err)
 
-			require.EqualValues(t, tt.expect, actual)
+			require.EqualValues(t, expected, actual)
 		})
 	}
 }

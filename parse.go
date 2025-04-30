@@ -4,19 +4,20 @@ import "fmt"
 
 type Parser interface {
 	Type() string
-	Parse() (map[string]string, error)
+	Parse(awaited map[string]bool, conv func(any) string) (found, unknown map[string]string, err error)
 }
 
 func Parse(ps ...Parser) error {
 	c.parsers = append(c.parsers, ps...)
+	awaited := c.awaited()
 
 	for _, p := range c.parsers {
-		vs, err := p.Parse()
+		found, _, err := p.Parse(awaited, ToString)
 		if err != nil {
 			return fmt.Errorf("parse %q: %w", p.Type(), err)
 		}
 
-		err = c.applyParser(vs)
+		err = c.applyParser(found)
 		if err != nil {
 			return fmt.Errorf("apply %q: %w", p.Type(), err)
 		}

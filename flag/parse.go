@@ -5,6 +5,8 @@ import (
 	"strings"
 )
 
+var conv func(any) string
+
 type Parser struct{}
 
 func New() Parser {
@@ -15,14 +17,16 @@ func (Parser) Type() string {
 	return "flag"
 }
 
-func (Parser) Parse() (map[string]string, error) {
+func (Parser) Parse(awaited map[string]bool, c func(any) string) (found, unknown map[string]string, err error) {
 	args := os.Args[1:]
+	conv = c
 
-	return parse(args)
+	found, unknown = parse(awaited, args)
+	return
 }
 
-func parse(args []string) (map[string]string, error) {
-	flags := make(map[string]string)
+func parse(awaited map[string]bool, args []string) (found, unknown map[string]string) {
+	found, unknown = make(map[string]string), make(map[string]string)
 
 	for i := 0; i < len(args); i++ {
 		arg := args[i]
@@ -46,8 +50,12 @@ func parse(args []string) (map[string]string, error) {
 			i++
 		}
 
-		flags[name] = value
+		if _, ok := awaited[name]; ok {
+			found[name] = conv(value)
+		} else {
+			unknown[name] = conv(value)
+		}
 	}
 
-	return flags, nil
+	return
 }

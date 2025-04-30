@@ -31,7 +31,7 @@ func Group(g *Grp) OptNode {
 }
 
 type Value interface {
-	String() string
 	Set(string) error
+	String() string
 	Type() string
 }

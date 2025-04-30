@@ -65,3 +65,5 @@ go.work
 
 .gitlab-ci-local
 
+test/
+

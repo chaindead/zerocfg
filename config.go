@@ -70,6 +70,20 @@ func (c *config) set(key string, v string) error {
 	return c.vs[key].Value.Set(v)
 }
 
+func (c *config) awaited() map[string]bool {
+	a := make(map[string]bool)
+
+	for k, _ := range c.vs {
+		a[k] = true
+	}
+
+	for k, _ := range c.aliases {
+		a[k] = false
+	}
+
+	return a
+}
+
 func Configuration() string {
 	b := strings.Builder{}
 
