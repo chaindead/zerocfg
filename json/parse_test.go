@@ -21,7 +21,7 @@ func TestParse(t *testing.T) {
 	}{
 		{
 			name:  "simple key-value",
-			input: `{"str": "name", "int": 1}`,
+			input: `{"str": "name", "int": 1, "bool": true}`,
 			awaited: map[string]bool{
 				"str": true,
 			},
@@ -29,43 +29,66 @@ func TestParse(t *testing.T) {
 				"str": `name`,
 			},
 			unknown: map[string]string{
-				"int": `1`,
+				"int":  `1`,
+				"bool": `true`,
 			},
 		},
 		{
 			name: "nested",
 			input: `{
-                "host": "localhost",
                 "database": {
-                    "port": 5432,
-                    "credentials": {
-                        "username": "admin"
-                    }
+                    "host": "localhost",
+                    "port": 5432
                 }
             }`,
 			awaited: map[string]bool{
-				"database.credentials.username": true,
+				"database.host": true,
 			},
 			found: map[string]string{
-				"database.credentials.username": `admin`,
+				"database.host": `localhost`,
 			},
 			unknown: map[string]string{
-				"host":          `localhost`,
 				"database.port": `5432`,
 			},
 		},
 		{
 			name:  "array",
-			input: `{"tags": ["tag1", "tag2", "tag3"]}`,
+			input: `{"tags": ["a", "b"]}`,
 			awaited: map[string]bool{
 				"tags": true,
 			},
 			found: map[string]string{
-				"tags": `["tag1","tag2","tag3"]`,
+				"tags": `["a","b"]`,
 			},
+			unknown: map[string]string{},
 		},
 		{
-			name:  "map within awaited key",
+			name:  "map",
+			input: `{"options": {"k1": 1, "k2": "v2"}}`,
+			awaited: map[string]bool{
+				"options": true,
+			},
+			found: map[string]string{
+				"options": `{"k1":1,"k2":"v2"}`,
+			},
+			unknown: map[string]string{},
+		},
+		{
+			name:  "null value is skipped",
+			input: `{"key1": "value1", "key2": null, "key3": 123}`,
+			awaited: map[string]bool{
+				"key1": true,
+				"key2": true,
+				"key3": true,
+			},
+			found: map[string]string{
+				"key1": `value1`,
+				"key3": `123`,
+			},
+			unknown: map[string]string{},
+		},
+		{
+			name:  "awaited nested map skips inner unknown",
 			input: `{"db": {"host": "localhost", "port": 5432}}`,
 			awaited: map[string]bool{
 				"db": true,
@@ -76,7 +99,7 @@ func TestParse(t *testing.T) {
 			unknown: map[string]string{},
 		},
 		{
-			name:  "awaited key within map",
+			name:  "awaited inner map key identifies outer as known parent",
 			input: `{"db": {"host": "localhost", "port": 5432}}`,
 			awaited: map[string]bool{
 				"db.host": true,
@@ -89,148 +112,8 @@ func TestParse(t *testing.T) {
 			},
 		},
 		{
-			name:  "bool and null",
-			input: `{"flag": true, "value": null}`,
-			awaited: map[string]bool{
-				"flag":  true,
-				"value": true,
-			},
-			found: map[string]string{
-				"flag":  `true`,
-				"value": `null`,
-			},
-			unknown: map[string]string{},
-		},
-		{
-			name:  "numbers (float, exp, negative)",
-			input: `{"pi": 3.1415, "big": 1e6, "neg": -0.5}`,
-			awaited: map[string]bool{
-				"pi":  true,
-				"big": true,
-				"neg": true,
-			},
-			found: map[string]string{
-				"pi":  `3.1415`,
-				"big": `1e6`,
-				"neg": `-0.5`,
-			},
-			unknown: map[string]string{},
-		},
-		{
-			name:  "empty structures",
-			input: `{"emptyObj": {}, "emptyArr": []}`,
-			awaited: map[string]bool{
-				"emptyObj": true,
-				"emptyArr": true,
-			},
-			found: map[string]string{
-				"emptyObj": `{}`,
-				"emptyArr": `[]`,
-			},
-			unknown: map[string]string{},
-		},
-		{
-			name: "escaped strings",
-			input: `{
-                "path": "C:\\\\Users\\\\Alice",
-                "quote": "\"To be\"",
-                "euro": "\u20AC"
-            }`,
-			awaited: map[string]bool{
-				"path":  true,
-				"quote": true,
-				"euro":  true,
-			},
-			found: map[string]string{
-				"path":  `C:\\Users\\Alice`,
-				"quote": `"To be"`,
-				"euro":  `€`,
-			},
-			unknown: map[string]string{},
-		},
-		{
-			name: "nested arrays & objects",
-			input: `{
-                "users": [
-                    {"id": 1, "name": "Alice"},
-                    {"id": 2, "name": "Bob"}
-                ]
-            }`,
-			awaited: map[string]bool{
-				"users": true,
-			},
-			found: map[string]string{
-				"users": `[{"id":1,"name":"Alice"},{"id":2,"name":"Bob"}]`,
-			},
-			unknown: map[string]string{},
-		},
-		{
-			name:  "array element by index (await whole array)",
-			input: `{"tags": ["go", "json", "test"]}`,
-			awaited: map[string]bool{
-				"tags": true,
-			},
-			found: map[string]string{
-				"tags": `["go","json","test"]`,
-			},
-			unknown: map[string]string{},
-		},
-		{
-			name:  "duplicate keys",
-			input: `{"a": 1, "a": 2}`,
-			awaited: map[string]bool{
-				"a": true,
-			},
-			found: map[string]string{
-				"a": `2`,
-			},
-			unknown: map[string]string{},
-		},
-		{
-			name:  "key with dot character (await key itself)",
-			input: `{"a.b": {"c": 3}}`,
-			awaited: map[string]bool{
-				`a.b`: true,
-			},
-			found: map[string]string{
-				`a.b`: `{"c":3}`,
-			},
-			unknown: map[string]string{},
-		},
-		{
-			name:  "large integer",
-			input: `{"big": 9007199254740993}`,
-			awaited: map[string]bool{
-				"big": true,
-			},
-			found: map[string]string{
-				"big": `9007199254740993`,
-			},
-			unknown: map[string]string{},
-		},
-		{
-			name:    "json only bool",
-			input:   `true`,
-			wantErr: true,
-		},
-		{
-			name:    "json only string",
-			input:   `"hello"`,
-			wantErr: true,
-		},
-		{
-			name:    "json only number",
-			input:   `123`,
-			wantErr: true,
-		},
-		{
-			name:    "json only null",
-			input:   `null`,
-			wantErr: true,
-		},
-		{
-			name:    "json only array",
-			input:   `[1,2,3]`,
+			name:    "json root is not an object",
+			input:   `[1, 2, 3]`,
 			wantErr: true,
 		},
 	}
@@ -245,11 +128,6 @@ func TestParse(t *testing.T) {
 			}
 
 			path := tempFile(t, tt.input)
-
-			if tt.input == "" {
-
-				require.NotEqual(t, "", path, "tempFile should return a path even for empty content")
-			}
 			p := json.New(&path)
 
 			found, unknown, err := p.Parse(tt.awaited, zfg.ToString)

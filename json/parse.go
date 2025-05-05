@@ -1,6 +1,7 @@
 package json
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -53,31 +54,10 @@ func (p *Parser) Parse(keys map[string]bool, conv func(any) string) (found, unkn
 func (p *Parser) parse(data []byte) (found, unknown map[string]string, err error) {
 	var settings any
 
-	tempFile, err := os.CreateTemp("", "json-input-*.json")
-	if err != nil {
-		return nil, nil, fmt.Errorf("create temp file for json: %w", err)
-	}
-	defer os.Remove(tempFile.Name())
-
-	if _, err := tempFile.Write(data); err != nil {
-		tempFile.Close()
-		return nil, nil, fmt.Errorf("write to temp file for json: %w", err)
-	}
-	if _, err := tempFile.Seek(0, 0); err != nil {
-		tempFile.Close()
-		return nil, nil, fmt.Errorf("seek temp file for json: %w", err)
-	}
-
-	decoder := json.NewDecoder(tempFile)
+	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.UseNumber()
-	decodeErr := decoder.Decode(&settings)
-	closeErr := tempFile.Close()
-
-	if decodeErr != nil {
-		return nil, nil, fmt.Errorf("unmarshal json: %w", decodeErr)
-	}
-	if closeErr != nil {
-		return nil, nil, fmt.Errorf("close temp file for json: %w", closeErr)
+	if err = decoder.Decode(&settings); err != nil {
+		return nil, nil, fmt.Errorf("unmarshal json: %w", err)
 	}
 
 	settingsMap, ok := settings.(map[string]any)
@@ -98,6 +78,11 @@ func (p *Parser) flatten(settings map[string]any) (found, unknown map[string]str
 
 func (p *Parser) flattenDFS(m map[string]any, prefix string, found, unknown map[string]string) {
 	for k, v := range m {
+
+		if v == nil {
+			continue
+		}
+
 		newKey := k
 		if prefix != "" {
 			newKey = prefix + "." + k
