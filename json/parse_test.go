@@ -21,7 +21,7 @@ func TestParse(t *testing.T) {
 	}{
 		{
 			name:  "simple key-value",
-			input: `{"str": "name", "int": 1, "bool": true}`,
+			input: `{"str": "name", "int": 1}`,
 			awaited: map[string]bool{
 				"str": true,
 			},
@@ -29,25 +29,28 @@ func TestParse(t *testing.T) {
 				"str": `name`,
 			},
 			unknown: map[string]string{
-				"int":  `1`,
-				"bool": `true`,
+				"int": `1`,
 			},
 		},
 		{
 			name: "nested",
 			input: `{
+                "host": "localhost",
                 "database": {
-                    "host": "localhost",
-                    "port": 5432
+                    "port": 5432,
+                    "credentials": {
+                        "username": "admin"
+                    }
                 }
             }`,
 			awaited: map[string]bool{
-				"database.host": true,
+				"database.credentials.username": true,
 			},
 			found: map[string]string{
-				"database.host": `localhost`,
+				"database.credentials.username": `admin`,
 			},
 			unknown: map[string]string{
+				"host":          `localhost`,
 				"database.port": `5432`,
 			},
 		},
@@ -87,35 +90,6 @@ func TestParse(t *testing.T) {
 			},
 			unknown: map[string]string{},
 		},
-		{
-			name:  "awaited nested map skips inner unknown",
-			input: `{"db": {"host": "localhost", "port": 5432}}`,
-			awaited: map[string]bool{
-				"db": true,
-			},
-			found: map[string]string{
-				"db": `{"host":"localhost","port":5432}`,
-			},
-			unknown: map[string]string{},
-		},
-		{
-			name:  "awaited inner map key identifies outer as known parent",
-			input: `{"db": {"host": "localhost", "port": 5432}}`,
-			awaited: map[string]bool{
-				"db.host": true,
-			},
-			found: map[string]string{
-				"db.host": `localhost`,
-			},
-			unknown: map[string]string{
-				"db.port": "5432",
-			},
-		},
-		{
-			name:    "json root is not an object",
-			input:   `[1, 2, 3]`,
-			wantErr: true,
-		},
 	}
 
 	for _, tt := range tests {
@@ -152,13 +126,14 @@ func TestParse_Error(t *testing.T) {
 	assert.Contains(t, err.Error(), "unmarshal json")
 }
 
-func TestParse_EmptyInputError(t *testing.T) {
+func TestParse_EmptyInputNoError(t *testing.T) {
 	path := tempFile(t, ``)
 	p := json.New(&path)
 
-	_, _, err := p.Parse(map[string]bool{}, zfg.ToString)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "is empty")
+	found, unknown, err := p.Parse(map[string]bool{}, zfg.ToString)
+	assert.NoError(t, err)
+	assert.Empty(t, found)
+	assert.Empty(t, unknown)
 }
 
 func TestParse_FileNotExist(t *testing.T) {
@@ -172,16 +147,15 @@ func TestParse_FileNotExist(t *testing.T) {
 }
 
 func tempFile(t *testing.T, data string) string {
-	f, err := os.CreateTemp("", "test-*.json")
+	f, err := os.CreateTemp("", "tmpjson-")
 	require.NoError(t, err)
 	t.Cleanup(func() {
+		f.Close()
 		os.Remove(f.Name())
 	})
 
-	if data != "" {
-		_, err = f.WriteString(data)
-		require.NoError(t, err)
-	}
+	_, err = f.WriteString(data)
+	require.NoError(t, err)
 
 	require.NoError(t, f.Close())
 

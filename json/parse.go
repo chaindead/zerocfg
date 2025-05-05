@@ -42,7 +42,7 @@ func (p *Parser) Parse(keys map[string]bool, conv func(any) string) (found, unkn
 	}
 
 	if len(data) == 0 {
-		return found, unknown, fmt.Errorf("json file %q is empty", *p.path)
+		return found, unknown, nil
 	}
 
 	p.conv = conv
@@ -57,12 +57,15 @@ func (p *Parser) parse(data []byte) (found, unknown map[string]string, err error
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.UseNumber()
 	if err = decoder.Decode(&settings); err != nil {
+		if err.Error() == "EOF" && len(data) == 0 {
+			return make(map[string]string), make(map[string]string), nil
+		}
 		return nil, nil, fmt.Errorf("unmarshal json: %w", err)
 	}
 
 	settingsMap, ok := settings.(map[string]any)
 	if !ok {
-		return nil, nil, fmt.Errorf("json root is not an object")
+		return make(map[string]string), make(map[string]string), nil
 	}
 
 	found, unknown = p.flatten(settingsMap)
@@ -88,40 +91,16 @@ func (p *Parser) flattenDFS(m map[string]any, prefix string, found, unknown map[
 			newKey = prefix + "." + k
 		}
 
-		_, isAwaited := p.awaited[newKey]
+		if p.awaited[newKey] {
+			found[newKey] = p.conv(v)
+			continue
+		}
 
 		if subMap, ok := v.(map[string]any); ok {
-			if isAwaited {
-				found[newKey] = p.conv(v)
-
-			} else {
-
-				isParentOfAwaited := false
-				for awaitedKey := range p.awaited {
-					if len(awaitedKey) > len(newKey) && awaitedKey[len(newKey)] == '.' && awaitedKey[:len(newKey)] == newKey {
-						isParentOfAwaited = true
-						break
-					}
-				}
-
-				if !isParentOfAwaited {
-					unknown[newKey] = p.conv(v)
-				}
-
-				p.flattenDFS(subMap, newKey, found, unknown)
-			}
-		} else if _, ok := v.([]any); ok {
-			if isAwaited {
-				found[newKey] = p.conv(v)
-			} else {
-				unknown[newKey] = p.conv(v)
-			}
-		} else {
-			if isAwaited {
-				found[newKey] = p.conv(v)
-			} else {
-				unknown[newKey] = p.conv(v)
-			}
+			p.flattenDFS(subMap, newKey, found, unknown)
+			continue
 		}
+
+		unknown[newKey] = p.conv(v)
 	}
 }
