@@ -2,6 +2,7 @@ package json_test
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	zfg "github.com/chaindead/zerocfg"
@@ -18,6 +19,7 @@ func TestParse(t *testing.T) {
 		found   map[string]string
 		unknown map[string]string
 		wantErr bool
+		errText string
 	}{
 		{
 			name:  "simple key-value",
@@ -90,6 +92,18 @@ func TestParse(t *testing.T) {
 			},
 			unknown: map[string]string{},
 		},
+		{
+			name:    "json root is not an object - array",
+			input:   `[1, 2, 3]`,
+			wantErr: true,
+			errText: "json root is not an object",
+		},
+		{
+			name:    "json root is not an object - string",
+			input:   `"just a string"`,
+			wantErr: true,
+			errText: "json root is not an object",
+		},
 	}
 
 	for _, tt := range tests {
@@ -108,6 +122,9 @@ func TestParse(t *testing.T) {
 
 			if tt.wantErr {
 				assert.Error(t, err)
+				if tt.errText != "" {
+					assert.True(t, strings.Contains(err.Error(), tt.errText), "Error message mismatch: expected to contain '%s', got '%s'", tt.errText, err.Error())
+				}
 			} else {
 				require.NoError(t, err)
 				assert.Equal(t, tt.found, found, "Found map mismatch")
@@ -117,7 +134,7 @@ func TestParse(t *testing.T) {
 	}
 }
 
-func TestParse_Error(t *testing.T) {
+func TestParse_MalformedError(t *testing.T) {
 	path := tempFile(t, `{"invalid": "json",}`)
 	p := json.New(&path)
 
@@ -126,24 +143,23 @@ func TestParse_Error(t *testing.T) {
 	assert.Contains(t, err.Error(), "unmarshal json")
 }
 
-func TestParse_EmptyInputNoError(t *testing.T) {
+func TestParse_EmptyInputError(t *testing.T) {
 	path := tempFile(t, ``)
 	p := json.New(&path)
 
-	found, unknown, err := p.Parse(map[string]bool{}, zfg.ToString)
-	assert.NoError(t, err)
-	assert.Empty(t, found)
-	assert.Empty(t, unknown)
+	_, _, err := p.Parse(map[string]bool{}, zfg.ToString)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "empty json input")
 }
 
-func TestParse_FileNotExist(t *testing.T) {
+func TestParse_FileNotExistError(t *testing.T) {
 	nonExistentPath := "no_such_file.json"
 	p := json.New(&nonExistentPath)
 
-	found, unknown, err := p.Parse(map[string]bool{"some.key": true}, zfg.ToString)
-	require.NoError(t, err)
-	assert.Empty(t, found)
-	assert.Empty(t, unknown)
+	_, _, err := p.Parse(map[string]bool{"some.key": true}, zfg.ToString)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "read json file")
+	assert.Contains(t, err.Error(), "no such file or directory")
 }
 
 func tempFile(t *testing.T, data string) string {
