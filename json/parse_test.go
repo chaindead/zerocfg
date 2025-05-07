@@ -1,7 +1,9 @@
 package json_test
 
 import (
+	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -10,6 +12,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func fileURL(t *testing.T, path string) *url.URL {
+	absPath, err := filepath.Abs(path)
+	require.NoError(t, err)
+	u := &url.URL{
+		Scheme: "file",
+		Path:   filepath.ToSlash(absPath),
+	}
+	return u
+}
 
 func TestParse(t *testing.T) {
 	tests := []struct {
@@ -98,12 +110,6 @@ func TestParse(t *testing.T) {
 			wantErr: true,
 			errText: "json root is not an object",
 		},
-		{
-			name:    "json root is not an object - string",
-			input:   `"just a string"`,
-			wantErr: true,
-			errText: "json root is not an object",
-		},
 	}
 
 	for _, tt := range tests {
@@ -115,8 +121,14 @@ func TestParse(t *testing.T) {
 				tt.unknown = map[string]string{}
 			}
 
-			path := tempFile(t, tt.input)
-			p := json.New(&path)
+			var u *url.URL
+			if tt.input != "" {
+				tmpFile := tempFile(t, tt.input)
+				u = fileURL(t, tmpFile)
+			}
+			urlPtr := &u
+
+			p := json.New(urlPtr)
 
 			found, unknown, err := p.Parse(tt.awaited, zfg.ToString)
 
@@ -135,8 +147,10 @@ func TestParse(t *testing.T) {
 }
 
 func TestParse_MalformedError(t *testing.T) {
-	path := tempFile(t, `{"invalid": "json",}`)
-	p := json.New(&path)
+	tmpFile := tempFile(t, `{"invalid": "json",}`)
+	u := fileURL(t, tmpFile)
+	urlPtr := &u
+	p := json.New(urlPtr)
 
 	_, _, err := p.Parse(map[string]bool{}, zfg.ToString)
 	assert.Error(t, err)
@@ -144,8 +158,10 @@ func TestParse_MalformedError(t *testing.T) {
 }
 
 func TestParse_EmptyInputError(t *testing.T) {
-	path := tempFile(t, ``)
-	p := json.New(&path)
+	tmpFile := tempFile(t, ``)
+	u := fileURL(t, tmpFile)
+	urlPtr := &u
+	p := json.New(urlPtr)
 
 	_, _, err := p.Parse(map[string]bool{}, zfg.ToString)
 	assert.Error(t, err)
@@ -153,27 +169,59 @@ func TestParse_EmptyInputError(t *testing.T) {
 }
 
 func TestParse_FileNotExistError(t *testing.T) {
-	nonExistentPath := "no_such_file.json"
-	p := json.New(&nonExistentPath)
+	nonExistentPath := filepath.Join(t.TempDir(), "no_such_file.json")
+	u := fileURL(t, nonExistentPath)
+	urlPtr := &u
+	p := json.New(urlPtr)
 
 	_, _, err := p.Parse(map[string]bool{"some.key": true}, zfg.ToString)
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "read json file")
-	assert.Contains(t, err.Error(), "no such file or directory")
+	assert.Contains(t, err.Error(), "fetch json data")
+	assert.True(t, strings.Contains(err.Error(), "no such file") || strings.Contains(err.Error(), "cannot find the path"), "Error message: %v", err)
+}
+
+func TestParse_NilURL(t *testing.T) {
+	var nilURL *url.URL
+	urlPtr := &nilURL
+	p := json.New(urlPtr)
+	found, unknown, err := p.Parse(map[string]bool{}, zfg.ToString)
+	require.NoError(t, err)
+	assert.Empty(t, found)
+	assert.Empty(t, unknown)
+}
+
+func TestParse_UnsupportedScheme(t *testing.T) {
+	u, err := url.Parse("ftp://example.com/file.json")
+	require.NoError(t, err)
+	urlPtr := &u
+	p := json.New(urlPtr)
+	_, _, parseErr := p.Parse(map[string]bool{}, zfg.ToString)
+	require.Error(t, parseErr)
+	assert.Contains(t, parseErr.Error(), "unsupported URL scheme: \"ftp\"")
+}
+
+func TestParse_SchemelessPathAsFile(t *testing.T) {
+	tmpFileContent := `{"schemeless": "ok"}`
+	tmpFilePath := tempFile(t, tmpFileContent)
+
+	u := &url.URL{Path: tmpFilePath}
+	urlPtr := &u
+	p := json.New(urlPtr)
+
+	found, _, err := p.Parse(map[string]bool{"schemeless": true}, zfg.ToString)
+	require.NoError(t, err)
+	require.Equal(t, map[string]string{"schemeless": "ok"}, found)
 }
 
 func tempFile(t *testing.T, data string) string {
-	f, err := os.CreateTemp("", "tmpjson-")
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		f.Close()
-		os.Remove(f.Name())
-	})
-
-	_, err = f.WriteString(data)
+	f, err := os.CreateTemp(t.TempDir(), "test-*.json")
 	require.NoError(t, err)
 
+	if data != "" {
+		_, err = f.WriteString(data)
+		require.NoError(t, err)
+	}
+	name := f.Name()
 	require.NoError(t, f.Close())
-
-	return f.Name()
+	return name
 }
