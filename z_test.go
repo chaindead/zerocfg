@@ -2,6 +2,7 @@ package zerocfg
 
 import (
 	"net"
+	neturl "net/url"
 	"reflect"
 	"strings"
 	"testing"
@@ -152,13 +153,28 @@ func Test_ValueOk(t *testing.T) {
 				}, map[string]any{"float": 1., "str": "val"})
 			},
 		},
+		{
+			varType: "url",
+			init: func() (reg func() any, val any, src map[string]any) {
+				defaultURLStr := "http://default.com/path"
+				valStr := "https://example.com/another?query=1"
+
+				parsedVal, err := neturl.Parse(valStr)
+				require.NoError(t, err)
+
+				reg = func() any {
+					return URL(name, defaultURLStr, "url description")
+				}
+				return reg, parsedVal, map[string]any{name: valStr}
+			},
+		},
 	}
 
 	dereference := func(t *testing.T, v any) any {
 		val := reflect.ValueOf(v)
 		require.True(t, val.Kind() == reflect.Ptr, "val must be a pointer")
-
-		return val.Elem().Interface()
+		elem := val.Elem()
+		return elem.Interface()
 	}
 
 	for _, tt := range tests {
@@ -172,17 +188,48 @@ func Test_ValueOk(t *testing.T) {
 			require.NoError(t, err)
 
 			actual := dereference(t, ptr)
-			require.EqualValues(t, expected, actual)
+
+			if tt.varType == "url" {
+				actualURL, okActual := actual.(*neturl.URL)
+				require.True(t, okActual, "actual should be *neturl.URL")
+				expectedURL, okExpected := expected.(*neturl.URL)
+				require.True(t, okExpected, "expected should be *neturl.URL")
+
+				if expectedURL == nil {
+					require.Nil(t, actualURL)
+				} else {
+					require.NotNil(t, actualURL)
+					require.Equal(t, expectedURL.String(), actualURL.String())
+				}
+			} else {
+				require.EqualValues(t, expected, actual)
+			}
 
 			// check Set and ToString is compatible
 			node, ok := c.vs[name]
 			require.True(t, ok)
 
-			err = node.Value.Set(ToString(actual))
+			stringRepresentation := ToString(actual)
+			err = node.Value.Set(stringRepresentation)
 			require.NoError(t, err)
 
 			updatedActual := dereference(t, ptr)
-			require.Equal(t, actual, updatedActual)
+
+			if tt.varType == "url" {
+				updatedActualURL, okUpdated := updatedActual.(*neturl.URL)
+				require.True(t, okUpdated)
+				actualURL, okActual := actual.(*neturl.URL)
+				require.True(t, okActual)
+
+				if actualURL == nil {
+					require.Nil(t, updatedActualURL)
+				} else {
+					require.NotNil(t, updatedActualURL)
+					require.Equal(t, actualURL.String(), updatedActualURL.String())
+				}
+			} else {
+				require.Equal(t, actual, updatedActual)
+			}
 
 			// check type name
 			awaitedType := strings.Split(tt.varType, " ")[0]
