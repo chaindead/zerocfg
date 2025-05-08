@@ -159,13 +159,28 @@ func Test_ValueOk(t *testing.T) {
 				defaultURLStr := "http://default.com/path"
 				valStr := "https://example.com/another?query=1"
 
-				parsedVal, err := neturl.Parse(valStr)
+				parsedStdURL, err := neturl.Parse(valStr)
 				require.NoError(t, err)
+				expectedVal := urlValue(*parsedStdURL)
 
 				reg = func() any {
 					return URL(name, defaultURLStr, "url description")
 				}
-				return reg, parsedVal, map[string]any{name: valStr}
+				return reg, expectedVal, map[string]any{name: valStr}
+			},
+		},
+		{
+			varType: "url empty",
+			init: func() (reg func() any, val any, src map[string]any) {
+				defaultURLStr := "http://default.com/path"
+				valStr := ""
+
+				expectedVal := urlValue{}
+
+				reg = func() any {
+					return URL(name, defaultURLStr, "url description")
+				}
+				return reg, expectedVal, map[string]any{name: valStr}
 			},
 		},
 	}
@@ -189,18 +204,15 @@ func Test_ValueOk(t *testing.T) {
 
 			actual := dereference(t, ptr)
 
-			if tt.varType == "url" {
-				actualURL, okActual := actual.(*neturl.URL)
-				require.True(t, okActual, "actual should be *neturl.URL")
-				expectedURL, okExpected := expected.(*neturl.URL)
-				require.True(t, okExpected, "expected should be *neturl.URL")
+			if tt.varType == "url" || tt.varType == "url empty" {
+				actualURLValue, okActual := actual.(urlValue)
+				require.True(t, okActual, "actual should be urlValue")
+				expectedURLValue, okExpected := expected.(urlValue)
+				require.True(t, okExpected, "expected should be urlValue")
 
-				if expectedURL == nil {
-					require.Nil(t, actualURL)
-				} else {
-					require.NotNil(t, actualURL)
-					require.Equal(t, expectedURL.String(), actualURL.String())
-				}
+				actualStdURL := neturl.URL(actualURLValue)
+				expectedStdURL := neturl.URL(expectedURLValue)
+				require.Equal(t, expectedStdURL.String(), actualStdURL.String())
 			} else {
 				require.EqualValues(t, expected, actual)
 			}
@@ -210,30 +222,29 @@ func Test_ValueOk(t *testing.T) {
 			require.True(t, ok)
 
 			stringRepresentation := ToString(actual)
+
 			err = node.Value.Set(stringRepresentation)
 			require.NoError(t, err)
 
 			updatedActual := dereference(t, ptr)
 
-			if tt.varType == "url" {
-				updatedActualURL, okUpdated := updatedActual.(*neturl.URL)
+			if tt.varType == "url" || tt.varType == "url empty" {
+				updatedActualURLValue, okUpdated := updatedActual.(urlValue)
 				require.True(t, okUpdated)
-				actualURL, okActual := actual.(*neturl.URL)
+				actualURLValue, okActual := actual.(urlValue)
 				require.True(t, okActual)
 
-				if actualURL == nil {
-					require.Nil(t, updatedActualURL)
-				} else {
-					require.NotNil(t, updatedActualURL)
-					require.Equal(t, actualURL.String(), updatedActualURL.String())
-				}
+				updatedStdURL := neturl.URL(updatedActualURLValue)
+				actualStdURL := neturl.URL(actualURLValue)
+				require.Equal(t, actualStdURL.String(), updatedStdURL.String())
+
 			} else {
 				require.Equal(t, actual, updatedActual)
 			}
 
 			// check type name
-			awaitedType := strings.Split(tt.varType, " ")[0]
-			require.Equal(t, awaitedType, node.Value.Type())
+			cleanVarType := strings.Split(tt.varType, " ")[0]
+			require.Equal(t, cleanVarType, node.Value.Type())
 		})
 	}
 }
