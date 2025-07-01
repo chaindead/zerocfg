@@ -190,3 +190,43 @@ func Test_ValueOk(t *testing.T) {
 		})
 	}
 }
+
+func Test_ShowIP(t *testing.T) {
+	// Save current global config
+	savedC := c
+	defer func() { c = savedC }()
+
+	// Create fresh config
+	c = testConfig()
+
+	// Test IP display in Show()
+	_ = IP("test.ip", "192.168.1.1", "test IP address")
+
+	err := Parse()
+	require.NoError(t, err)
+
+	output := Show()
+	require.Contains(t, output, "192.168.1.1")
+	require.NotContains(t, output, "[") // Should not contain byte array representation
+}
+
+func Test_IPSlice(t *testing.T) {
+	// Save current global config
+	savedC := c
+	defer func() { c = savedC }()
+
+	// Create fresh config
+	c = testConfig()
+
+	// Test IP slice
+	ips := IPs("servers", []string{"127.0.0.1", "192.168.1.1"}, "server IPs")
+
+	err := Parse(newMock(map[string]any{
+		"servers": `["10.0.0.1", "10.0.0.2"]`,
+	}))
+	require.NoError(t, err)
+
+	require.Len(t, *ips, 2)
+	require.Equal(t, "10.0.0.1", (*ips)[0].String())
+	require.Equal(t, "10.0.0.2", (*ips)[1].String())
+}
