@@ -4,6 +4,8 @@ import (
 	"os"
 	"regexp"
 	"strings"
+
+	denv "github.com/joho/godotenv"
 )
 
 var cleanRe = regexp.MustCompile(`[^A-Za-z0-9.]+`)
@@ -17,10 +19,17 @@ func WithPrefix(prefix string) Opt {
 	}
 }
 
+func WithPath(path *string) Opt {
+	return func(p *Provider) {
+		p.path = path
+	}
+}
+
 // Provider parses environment variables for configuration.
 type Provider struct {
 	// Prefix to prepend to all environment variable names.
 	prefix string
+	path   *string
 }
 
 // New creates a new Provider with the provided options.
@@ -48,6 +57,13 @@ func (p Provider) key(s string) string {
 
 // Parse reads environment variables matching the awaited keys and returns found values.
 func (p Provider) Provide(awaited map[string]bool, _ func(any) string) (found, unknown map[string]string, err error) {
+	if *p.path != "" {
+		err = denv.Load(*p.path)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
 	keys := make(map[string]string, len(awaited))
 	for k := range awaited {
 		keys[k] = toENV(p.key(k))
