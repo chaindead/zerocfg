@@ -57,7 +57,7 @@ func (p Provider) key(s string) string {
 
 // Parse reads environment variables matching the awaited keys and returns found values.
 func (p Provider) Provide(awaited map[string]bool, _ func(any) string) (found, unknown map[string]string, err error) {
-	if p.path != nil {
+	if p.path != nil && *p.path != "" {
 		err = denv.Load(*p.path)
 		if err != nil {
 			return nil, nil, err
